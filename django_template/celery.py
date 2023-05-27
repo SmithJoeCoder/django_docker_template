@@ -4,9 +4,9 @@ import sys
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "genesis.settings.base")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_template.settings.base")
 
-app = Celery("genesis")
+app = Celery("django_template")
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
