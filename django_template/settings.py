@@ -41,9 +41,15 @@ INSTALLED_APPS = [
 
 PROJECT_APPS = []
 
+INSTALLED_APPS += PROJECT_APPS
+
 THIRD_PARTY_APPS = [
+    'django_celery_beat',
+    'django_extensions',
     'psqlextra',
 ]
+
+INSTALLED_APPS += THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -138,6 +144,32 @@ DATABASES = {
     }
 }
 
-# Celery settings
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+REDIS_CACHE_LOCATION = f'redis://{REDIS_HOST}:6379'
+CACHES = {
+    "celery": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        'LOCATION': f'{REDIS_CACHE_LOCATION}/0',  # db=0
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    },
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        'LOCATION': f'{REDIS_CACHE_LOCATION}/1',  # db=1
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    },
+}
+
+CELERY_ACCEPT_CONTENT = ['pickle', 'json']
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:6379')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', None)
+CELERY_TASK_DEFAULT_QUEUE = 'general'
+CELERY_TASK_REJECT_ON_WORKER_LOST = (
+    False if os.getenv('CELERY_TASK_REJECT_ON_WORKER_LOST', 'true').lower() == 'false' else True
+)
+CELERY_ACKS_LATE = False if os.getenv('CELERY_ACKS_LATE', 'true').lower() == 'false' else True
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
